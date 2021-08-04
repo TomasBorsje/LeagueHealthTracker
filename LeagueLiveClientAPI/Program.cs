@@ -18,26 +18,29 @@ namespace LeagueLiveClientAPI
     class Program
     {
         private static readonly HttpClient client = new HttpClient();
-        static List<float> currentHealthPoints = new List<float>(); // Every 0.25 seconds
-        static List<float> maxHealthPoints = new List<float>(); // Every 0.25 seconds
-        [STAThread]
+        static List<float> currentHealthPoints = new List<float>(); // Store current health data points
+        static List<float> maxHealthPoints = new List<float>(); // Store max health data points
+
+        private static int TICKS_PER_SECOND = 4;
+
         static async Task Main(string[] args)
         {
-            ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, sslPolicyErrors) => true; // Disable annoying web certificate validation
+            ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, sslPolicyErrors) => true; // Disable web certificate validation as League's local server is insecure
 
             try
             { 
-                while (currentHealthPoints.Count < 14400) // Run for 60 minutes or until game closes
+                while (currentHealthPoints.Count < 3600*TICKS_PER_SECOND) // Run for 60 minutes or until game closes
                 {
                     Console.SetCursorPosition(0, 0);
-                    var response = await client.GetAsync("https://127.0.0.1:2999/liveclientdata/activeplayer"); // Grab data
-                    string json = await response.Content.ReadAsStringAsync();
-                    var result = JsonConvert.DeserializeObject<JToken>(json);
-                    currentHealthPoints.Add(float.Parse(result["championStats"]["currentHealth"].ToString()));
+                    var response = await client.GetAsync("https://127.0.0.1:2999/liveclientdata/activeplayer"); // Request data
+                    string json = await response.Content.ReadAsStringAsync(); // Extract json
+                    var result = JsonConvert.DeserializeObject<JToken>(json); // Deserialize json
+                    currentHealthPoints.Add(float.Parse(result["championStats"]["currentHealth"].ToString())); // Add data to lists
                     maxHealthPoints.Add(float.Parse(result["championStats"]["maxHealth"].ToString()));
-                    Console.WriteLine("Tracking HP for: " + result["summonerName"].ToString());
+
+                    Console.WriteLine("Tracking HP for: " + result["summonerName"].ToString()); // Print info
                     Console.WriteLine("Current HP: " + result["championStats"]["currentHealth"].ToString());
-                    Thread.Sleep(250);
+                    Thread.Sleep(1000/TICKS_PER_SECOND); // Sleep for 250ms
                 }
             }
             catch(WebException e)
@@ -52,8 +55,7 @@ namespace LeagueLiveClientAPI
 
             GeneratePlot();
 
-            Console.WriteLine("Plot generated.");
-
+            Console.WriteLine("Press any key to exit...");
             Console.ReadLine();
         }
 
@@ -83,8 +85,8 @@ namespace LeagueLiveClientAPI
             // Add data to the lines
             for (int i = 0; i < currentHealthPoints.Count; i++)
             {
-                currentHealthLine.Points.Add(new OxyPlot.DataPoint(i * 0.25, currentHealthPoints[i]));
-                maxHealthLine.Points.Add(new OxyPlot.DataPoint(i * 0.25, maxHealthPoints[i]));
+                currentHealthLine.Points.Add(new OxyPlot.DataPoint(i * 1f/TICKS_PER_SECOND, currentHealthPoints[i]));
+                maxHealthLine.Points.Add(new OxyPlot.DataPoint(i * 1f/TICKS_PER_SECOND, maxHealthPoints[i]));
             }
 
             // Create the model and add the line series to it
@@ -103,6 +105,8 @@ namespace LeagueLiveClientAPI
             thread.SetApartmentState(ApartmentState.STA);
             thread.Start();
             thread.Join(); // Run the thread
+
+            Console.WriteLine("Plot generated.");
         }
     }
 }
