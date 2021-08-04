@@ -1,5 +1,5 @@
 # LeagueHealthTracker
-A small project that tracks your health &amp; plots it when the game is done. Can easily be adapted to track other statistics instead.
+A small project that tracks your health in League of Legends &amp; plots it when the game is done. Can easily be adapted to track other statistics instead.
 
 ### How to use:
 
