@@ -6,3 +6,7 @@ A small project that tracks your health in League of Legends &amp; plots it when
 Run the executable with your league client open and in-game.
 The program will track your health and max health then generate
 a plot once the game ends.
+
+### Example Plot:
+(Click to expand)
+![](https://i.imgur.com/0q1Oup6.png)
